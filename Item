@@ -1,0 +1,36 @@
+每个字段都是对应Field()类型数据
+
+Item对象初始化之后是一个字典，但是在赋值之前是一个空字典，不能通过item[key]的方式来引用，否则会报错
+解决办法：定义一个初始化函数initValue（注：不是__init__）
+
+Item对象与数据表相关联的方法：增加一个save函数，写入数据库，在pipeline中调用
+class PlatformSnapshot(Item):
+    """
+    平台概览
+    打开 https://www.wdzj.com/dangan/ 看到的概览信息
+    """
+
+
+    platNamePin = Field()
+    platStatus = Field()
+    platName = Field()
+    platEarningsCode = Field()
+    money_stock = Field()
+    location = Field()
+    onlineDate = Field()
+    platReviewTag = Field()
+    CreditRanking = Field()
+    LabelList = Field()
+    OverallScore = Field()
+    NumberOfCommentators = Field()
+    CollectionTime = Field()
+
+    def initValue(self):
+        for var in self.fields.keys():
+            self[var]=""
+        return self
+
+    def save(self, cursor):
+        values = ['"'+str(self[var])+'"' for var in self.fields.keys()]
+        sql = "insert into {0} ({1}) values ({2})".format('PlatformSnapshot', ', '.join(self.fields.keys()), ', '.join(values))
+        cursor.execute(sql)，
