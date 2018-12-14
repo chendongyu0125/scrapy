@@ -1,0 +1,7 @@
+如果要提交post data
+在使用scrapy parse命令时要采用如下格式
+scrapy parse --callback=parse_OperationPerformanceDaily --meta='{"wdzjPlatId":"40"}' "https://shuju.wdzj.com/plat-info-initialize.html" 
+如果不能正常返回数据，需要考虑下表头的问题：
+    headers={
+    'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"
+         }
