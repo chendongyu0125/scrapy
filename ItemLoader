@@ -22,7 +22,7 @@
 如果是包含html标签的文本，采用etree.HTML将其转化为HTML对象，则会有问题。
     from xlml import etree
     ajaxHtml=js['ajaxHtml']
-    res = etree.HTML(ajaxHtml)
+    res = etree.HTML(ajaxHtml)  #这类对象不适合用item_loader
     selectors = res.xpath("//li")
     for selector in selectors:
         item_loader = ItemLoader(item=TouyouItem(), selector = selector)
@@ -42,7 +42,7 @@ AttributeError: 'list' object has no attribute 'extract'
 所以正确的代码应该是这样的：
     from scrapy.selector import Selector
     ajaxHtml=js['ajaxHtml']
-    <b> res = Selector(text=ajaxHtml) </b>
+    res = Selector(text=ajaxHtml) # 这一行是关键！
     selectors = res.xpath('//li')
     for touyou in selectors:
         item_loader = WDZJItemLoader(item = TouyouItem(), selector=touyou)
