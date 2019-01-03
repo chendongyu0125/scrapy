@@ -1,0 +1,54 @@
+针对response对象，可以采用add_xpath,得到Selector对象，针对Selector对象，可以继续使用xpath方法。
+例如：
+    xpath_root_list = '//div[@class="da-ggjj"]//ul[@class="gglist"]/li'
+    xpath_root_show = '//div[@class="da-ggjj"]//div[contains(@class, "ggshow")]'
+    list_selectors = response.xpath(xpath_root_list)
+    show_selectors = response.xpath(xpath_root_show)
+    for (selector_list, selector_show) in zip(list_selectors, show_selectors):
+        item = TopManager()
+        list_item_loader = WDZJItemLoader(item=item, selector=selector_list)
+        list_item_loader.add_xpath('Name', './a/span/text()', MapCompose(clean_values))
+        list_item_loader.add_xpath('Position', './a/p/text()', MapCompose(clean_values))
+        item = list_item_loader.load_item()
+        show_item_loader = WDZJItemLoader(item=item, selector=selector_show)
+        show_item_loader.add_xpath('Description','.//p[@class="cen"]/text()', MapCompose(clean_values))
+        show_item_loader.add_xpath('ImageURL', './/img/@src', MapCompose(clean_values, lambda x: "http:"+x))
+        item = show_item_loader.load_item()
+        item['platId']=platId
+        item['CollectionTime']=get_time()
+        yield item
+        
+        
+如果是包含html标签的文本，采用etree.HTML将其转化为HTML对象，则会有问题。
+    from xlml import etree
+    ajaxHtml=js['ajaxHtml']
+    res = etree.HTML(ajaxHtml)
+    selectors = res.xpath("//li")
+    for selector in selectors:
+        item_loader = ItemLoader(item=TouyouItem(), selector = selector)
+        item_loader.add_value("userID", userID)
+        item_loader.add_value("friendshipType", friendshipType)
+        item_loader.add_xpath("touyouName", ".//div[contains(@class,'plt-uName')]/a/text()")
+        item_loader.add_xpath("TouyouID", ".//div[contains(@class,'plt-uName')]/a/@href", re='[0-9]+')
+        item = item_loader.load_item()
+        yield item
+上述代码在运行到31行的时候会报错，提示：
+return flatten(self.selector.xpath(xpath).extract() for xpath in xpaths)
+AttributeError: 'list' object has no attribute 'extract'
+这是因为第25行得到的html是lxml.etree._Element对象，第26行代码得到的selectors是list对象，对象元素类型为：lxml.etree._Element
+针对每个元素，可以有xpath方法，即：selectors[0].xpath(".//div[contains(@class,'plt-uName')]/a/text()")，得到的是一个list对象。
+但是在语句item_loader.add_xpath("touyouName", ".//div[contains(@class,'plt-uName')]/a/text()")中，则会报错，
+因为在28行 selector=selector中，它需要的是一个Selector对象，而不是一个lxml.etree._Element对象。
+所以正确的代码应该是这样的：
+    from scrapy.selector import Selector
+    ajaxHtml=js['ajaxHtml']
+    <b> res = Selector(text=ajaxHtml) </b>
+    selectors = res.xpath('//li')
+    for touyou in selectors:
+        item_loader = WDZJItemLoader(item = TouyouItem(), selector=touyou)
+        item_loader.add_value("userID", userID)
+        item_loader.add_value("friendshipType", friendshipType)
+        item_loader.add_xpath("touyouName", ".//div[contains(@class,'plt-uName')]/a/text()")
+        item_loader.add_xpath("touyouID", ".//div[contains(@class,'plt-uName')]/a/@href", re='[0-9]+')
+        item = item_loader.load_item()
+        yield item 
