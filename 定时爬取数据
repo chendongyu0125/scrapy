@@ -1,0 +1,28 @@
+使用centos内置的cronb命令来定时爬取数据
+（1）撰写爬取数据的脚本程序，保存在当前文件夹中
+$ vim cronb.sh
+在sh文件中录入以下内容：
+  1 #! /bin/sh
+  2 source /etc/profile
+  3 source /home/chendongyu/.bash_profile
+  4 export PATH=/home/chendongyu/anaconda3/bin:$PATH
+  5 # export PATH=$PATH:/usr/local/bin
+  6 # export LANG=zh_CN.UTF-8
+  7 cd /home/chendongyu/Scrapy_WDZJ
+  8 nohup /home/chendongyu/anaconda3/bin/scrapy crawl PlatformOperations > PlatformOperations.log 2>&1 &
+  9 
+
+这里要特别注意一个问题，本系统中安装了两个python环境，2.7和3.6。cronb中不会设置任何环境变量，所以如果直接在命令中输入 nohup scrapy crawl PlatformOperations命令会报错，系统提示requests包找不到，因为默认会使用python2.7的环境。所以在命令中必须把scrapy的命令补充完整。
+
+（2）设置调度命令
+$ vim schedule.cronb
+在文件中输入如下内容：
+  40 9 * * 6 bash /home/chendongyu/Scrapy_WDZJ/cron.sh
+  其含义是每周六的早上9点40分执行cron.sh脚本中的内容
+  
+（3）执行调度
+# systemctl start crontab
+$ crontab schedule.cronb
+$ crontab -l # 查看是否已经进入调度程序序列
+
+
